@@ -282,7 +282,6 @@ private fun PreviewCard(
 
         ChordProView(
             song = parsed,
-            tags = emptyList(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(360.dp)

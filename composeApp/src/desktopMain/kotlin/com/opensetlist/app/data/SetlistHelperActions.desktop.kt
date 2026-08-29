@@ -52,17 +52,6 @@ private fun parseSetlistHelperDb(file: File): SetlistHelperBackup? {
                 }
             }
 
-            val genres = mutableMapOf<Long, String>()
-            if (tableExists(conn, "Genre")) {
-                conn.createStatement().use { st ->
-                    st.executeQuery("SELECT _id, name FROM Genre").use { rs ->
-                        while (rs.next()) {
-                            genres[rs.getLong(1)] = rs.getString(2)
-                        }
-                    }
-                }
-            }
-
             val tagNamesById = mutableMapOf<Long, String>()
             if (tableExists(conn, "Tag")) {
                 conn.createStatement().use { st ->
@@ -118,11 +107,6 @@ private fun parseSetlistHelperDb(file: File): SetlistHelperBackup? {
                             rs.getString(12) ?: "",
                             rs.getString(13) ?: ""
                         )
-                        val genreId = rs.getLong(6)
-                        val genreName = if (rs.wasNull()) null else genres[genreId]
-                        if (genreName != null) {
-                            songTagNames.getOrPut(id) { mutableListOf() }.add(genreName)
-                        }
                         val now = System.currentTimeMillis()
                         val creationDate = rs.getLong(14).takeIf { it > 0 } ?: now
                         val lastEdit = (rs.getLong(15).takeIf { it > 0 } ?: now)

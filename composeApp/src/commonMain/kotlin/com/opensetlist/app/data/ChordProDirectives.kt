@@ -51,6 +51,8 @@ object ChordProDirectives {
         "transpose" to "transpose", "trans" to "transpose",
         "x_youtube" to "x_youtube", "youtube" to "x_youtube", "youtube_url" to "x_youtube", "url" to "x_youtube",
         "tag" to "tag",
+        "tags" to "tags",
+        "x_tags" to "x_tags",
         "meta" to "meta",
 
         // Formatting / comments
@@ -159,6 +161,8 @@ object ChordProDirectives {
         add("transpose", Kind.METADATA, metadataKey = "transpose")
         add("x_youtube", Kind.METADATA, metadataKey = "x_youtube")
         add("tag", Kind.METADATA, metadataKey = "tag")
+        add("tags", Kind.METADATA, metadataKey = "tags")
+        add("x_tags", Kind.METADATA, metadataKey = "tags")
         add("meta", Kind.METADATA, metadataKey = "meta")
 
         add("comment", Kind.COMMENT, commentStyle = CommentStyle.PLAIN)
@@ -240,9 +244,11 @@ object ChordProDirectives {
     fun resolve(rawName: String): Directive? {
         var name = rawName.trim()
         if (name.isEmpty()) return null
-        if (name.startsWith("x_")) return EXTENSION_IGNORE
         name = name.substringBefore('-').trim().lowercase()
         if (name.isEmpty()) return null
+        // Diretivas de extensão genéricas (`x_...`) são ignoradas, exceto as conhecidas
+        // (como x_tags e x_youtube), que têm metadados próprios.
+        if (name.startsWith("x_") && name !in ALIASES) return EXTENSION_IGNORE
         val canonical = ALIASES[name] ?: return null
         return DIRECTIVES[canonical]
     }

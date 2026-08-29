@@ -200,6 +200,8 @@ object AppStrings {
     val importBackupFile = "Importar backup"
     val saveSongsToFile = "Salvar todas em .pro (um por música)"
     val shareSongs = "Compartilhar todas (.osl)"
+    val exportArtist = "Exportar artista com suas músicas"
+    val exportTag = "Exportar tag com suas músicas"
     val importSongs = "Importar músicas"
     val importSetlistHelperFile = "Importar backup do SetList Helper"
     val importSetlist = "Importar setlist"

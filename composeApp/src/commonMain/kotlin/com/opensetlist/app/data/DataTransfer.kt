@@ -1,10 +1,12 @@
 package com.opensetlist.app.data
 
+import com.opensetlist.app.model.Artist
 import com.opensetlist.app.model.BackupData
 import com.opensetlist.app.model.SetShareData
 import com.opensetlist.app.model.Setlist
 import com.opensetlist.app.model.SetlistSongLink
 import com.opensetlist.app.model.Song
+import com.opensetlist.app.model.Tag
 
 /**
  * Serialização e detecção dos formatos de transferência de dados do app.
@@ -16,6 +18,8 @@ object DataTransfer {
     private const val TYPE_BACKUP = "setlist_app_backup"
     private const val TYPE_SONGS = "setlist_app_songs"
     private const val TYPE_SET = "setlist_app_set"
+
+    val BACKUP_VERSION = 5
 
     fun detectType(json: String): String? {
         val parsed = JsonParser(json).parseObject() ?: return null
@@ -30,7 +34,7 @@ object DataTransfer {
 
     fun buildBackupJson(data: BackupData): String {
         val sb = StringBuilder()
-        sb.append("{\"type\":\"$TYPE_BACKUP\",\"version\":4,\"createdAt\":")
+        sb.append("{\"type\":\"$TYPE_BACKUP\",\"version\":$BACKUP_VERSION,\"createdAt\":")
         sb.append(quote(currentTimestampIso()))
         sb.append(",\"songs\":[")
         data.songs.forEachIndexed { i, s ->
@@ -49,7 +53,29 @@ object DataTransfer {
                 .append(",\"songId\":").append(l.songId)
                 .append(",\"position\":").append(l.position).append("}")
         }
-        sb.append("]}")
+        sb.append("],\"artists\":[")
+        data.artists.forEachIndexed { i, a ->
+            if (i > 0) sb.append(",")
+            sb.append(artistToJson(a))
+        }
+        sb.append("],\"tags\":[")
+        data.tags.forEachIndexed { i, t ->
+            if (i > 0) sb.append(",")
+            sb.append(tagToJson(t))
+        }
+        sb.append("],\"songTags\":{")
+        val sortedSongs = data.songTags.keys.sorted()
+        sortedSongs.forEachIndexed { i, songId ->
+            if (i > 0) sb.append(",")
+            sb.append("\"").append(songId).append("\":[")
+            val tagIds = data.songTags[songId].orEmpty()
+            tagIds.forEachIndexed { j, tagId ->
+                if (j > 0) sb.append(",")
+                sb.append(tagId)
+            }
+            sb.append("]")
+        }
+        sb.append("}}")
         return sb.toString()
     }
 
@@ -82,7 +108,32 @@ object DataTransfer {
             )
         }
 
-        return BackupData(songs, setlists, links)
+        val artists = mutableListOf<Artist>()
+        (parsed["artists"] as? List<*>)?.forEach { raw ->
+            (raw as? Map<*, *>)?.let { artists.add(artistFromJson(it)) }
+        }
+
+        val tags = mutableListOf<Tag>()
+        (parsed["tags"] as? List<*>)?.forEach { raw ->
+            (raw as? Map<*, *>)?.let { tags.add(tagFromJson(it)) }
+        }
+
+        val songTags = mutableMapOf<Long, List<Long>>()
+        (parsed["songTags"] as? Map<*, *>)?.forEach { (songKey, raw) ->
+            val songId = (songKey as? String)?.toLongOrNull() ?: return@forEach
+            val tagIds = (raw as? List<*>)?.mapNotNull { it.toLongValue().takeIf { v -> v != 0L } }
+                ?: return@forEach
+            songTags[songId] = tagIds
+        }
+
+        return BackupData(
+            songs = songs,
+            setlists = setlists,
+            links = links,
+            artists = artists,
+            tags = tags,
+            songTags = songTags
+        )
     }
 
     fun buildSongsBundleJson(songs: List<Song>): String {
@@ -161,6 +212,34 @@ object DataTransfer {
         creationDate = m["creationDate"].toLongValue(),
         lastEdit = m["lastEdit"].toLongValue(),
         transpose = (m["transpose"] as? Number)?.toInt() ?: 0
+    )
+
+    private fun artistToJson(a: Artist): String {
+        return "{\"id\":${a.id}," +
+            "\"name\":${quote(a.name)}," +
+            "\"creationDate\":${a.creationDate}," +
+            "\"lastEdit\":${a.lastEdit}}"
+    }
+
+    private fun artistFromJson(m: Map<*, *>): Artist = Artist(
+        id = m["id"].toLongValue(),
+        name = (m["name"] as? String) ?: "",
+        creationDate = m["creationDate"].toLongValue(),
+        lastEdit = m["lastEdit"].toLongValue()
+    )
+
+    private fun tagToJson(t: Tag): String {
+        return "{\"id\":${t.id}," +
+            "\"name\":${quote(t.name)}," +
+            "\"creationDate\":${t.creationDate}," +
+            "\"lastEdit\":${t.lastEdit}}"
+    }
+
+    private fun tagFromJson(m: Map<*, *>): Tag = Tag(
+        id = m["id"].toLongValue(),
+        name = (m["name"] as? String) ?: "",
+        creationDate = m["creationDate"].toLongValue(),
+        lastEdit = m["lastEdit"].toLongValue()
     )
 
     private fun setlistToJson(l: Setlist): String {

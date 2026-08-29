@@ -282,7 +282,9 @@ object ChordProParser {
     ) {
         meta[key] = value
         when (key) {
-            "tag" -> tags.add(value)
+            "tag", "tags" -> {
+                value.split(',').map { it.trim() }.filter { it.isNotEmpty() }.forEach { tags.add(it) }
+            }
             "meta" -> {
                 val parts = value.split(" ", limit = 2)
                 if (parts.isNotEmpty() && parts[0].isNotBlank()) {
@@ -317,4 +319,32 @@ private fun directiveNameOf(line: String): String? {
     }
     if (nameEnd == 0) return null
     return inner.substring(0, nameEnd).trim().lowercase()
+}
+
+private val TAG_DIRECTIVE_NAMES = setOf("tag", "tags", "x_tags")
+
+/**
+ * Reescreve as diretivas de tag no corpo do ChordPro: remove qualquer `{tag:}`/`{tags:}`/`{x_tags:}`
+ * existente e grava uma única `{x_tags: a, b}`, ou remove todas quando [tags] estiver vazio.
+ */
+fun setTagsDirective(body: String, tags: List<String>): String {
+    val clean = tags.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+    if (clean.isEmpty() && body.isBlank()) return body
+    val directive = if (clean.isNotEmpty()) "{x_tags: ${clean.joinToString(", ")}}" else null
+    val lines = body.lines()
+    val firstIndex = lines.indexOfFirst { directiveNameOf(it) in TAG_DIRECTIVE_NAMES }
+    if (firstIndex == -1) {
+        val result = lines.toMutableList()
+        if (directive != null) result.add(0, directive)
+        return result.joinToString("\n")
+    }
+    val rebuilt = mutableListOf<String>()
+    lines.forEachIndexed { i, line ->
+        when {
+            i == firstIndex && directive != null -> rebuilt.add(directive)
+            directiveNameOf(line) in TAG_DIRECTIVE_NAMES -> Unit
+            else -> rebuilt.add(line)
+        }
+    }
+    return rebuilt.joinToString("\n")
 }

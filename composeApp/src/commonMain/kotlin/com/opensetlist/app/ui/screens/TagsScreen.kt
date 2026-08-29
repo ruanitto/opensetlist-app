@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +51,7 @@ fun TagsScreen(
     onTagClick: (Tag) -> Unit,
     onEdit: (Tag) -> Unit,
     onDelete: (Tag) -> Unit,
+    onExport: (Tag) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -148,6 +150,12 @@ fun TagsScreen(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = AppStrings.editTag
+                            )
+                        }
+                        IconButton(onClick = { onExport(tag) }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = AppStrings.exportTag
                             )
                         }
                         IconButton(onClick = { onDelete(tag) }) {

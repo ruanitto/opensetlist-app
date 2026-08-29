@@ -72,7 +72,6 @@ import com.opensetlist.app.data.pedal.rememberPedalEvents
 import com.opensetlist.app.data.rememberFileActions
 import com.opensetlist.app.model.ParsedSong
 import com.opensetlist.app.model.Song
-import com.opensetlist.app.model.Tag
 import com.opensetlist.app.ui.components.ChordProView
 import kotlin.math.abs
 import kotlinx.coroutines.launch
@@ -87,7 +86,6 @@ import kotlinx.coroutines.launch
 fun ChordViewerScreen(
     songs: List<Song>,
     initialIndex: Int,
-    songTags: Map<Long, List<Tag>> = emptyMap(),
     onBack: () -> Unit,
     onEdit: (Song) -> Unit,
     onDelete: (Song) -> Unit,
@@ -350,7 +348,6 @@ fun ChordViewerScreen(
                 ) {
                     ChordProView(
                         song = pageParsed,
-                        tags = songTags[currentSong.id].orEmpty(),
                         hideChords = hideChords,
                         fontSize = fontSize,
                         scrollState = scrollState,
