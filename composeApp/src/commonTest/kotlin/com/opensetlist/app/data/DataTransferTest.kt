@@ -1,7 +1,9 @@
 package com.opensetlist.app.data
 
+import com.opensetlist.app.model.Artist
 import com.opensetlist.app.model.BackupData
 import com.opensetlist.app.model.Song
+import com.opensetlist.app.model.Tag
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -81,5 +83,34 @@ class DataTransferTest {
         assertNotNull(songs)
         assertEquals(1, songs.size)
         assertEquals("B", songs[0].title)
+    }
+
+    @Test
+    fun buildBackupJson_roundTrip_withArtistsTags() {
+        val data = BackupData(
+            songs = listOf(Song(id = 1, title = "A", artist = "X", body = "[G]")),
+            setlists = emptyList(),
+            links = emptyList(),
+            artists = listOf(Artist(id = 1, name = "X")),
+            tags = listOf(Tag(id = 1, name = "pop"), Tag(id = 2, name = "rock")),
+            songTags = mapOf(1L to listOf(1L, 2L))
+        )
+        val restored = DataTransfer.parseBackupJson(DataTransfer.buildBackupJson(data))
+        assertNotNull(restored)
+        assertEquals(1, restored.artists.size)
+        assertEquals("X", restored.artists[0].name)
+        assertEquals(listOf("pop", "rock"), restored.tags.map { it.name })
+        assertEquals(listOf(1L, 2L), restored.songTags[1L])
+        assertEquals(1, restored.songs.size)
+        assertEquals("A", restored.songs[0].title)
+    }
+
+    @Test
+    fun parseBackupJson_version4_withoutArtistsTags() {
+        val restored = DataTransfer.parseBackupJson(backupJson)
+        assertNotNull(restored)
+        assertEquals(emptyList(), restored.artists)
+        assertEquals(emptyList(), restored.tags)
+        assertEquals(emptyMap(), restored.songTags)
     }
 }

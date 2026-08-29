@@ -137,7 +137,7 @@ class SongRepository(private val database: AppDatabase) {
         var imported: Song? = null
         database.transaction {
             val result = importSongWithDedup(song)
-            addTagsToSong(result.id, parsed.tags)
+            setSongTags(result.id, parsed.tags.map { createTag(it).id })
             imported = result
         }
         return imported ?: song
@@ -205,7 +205,15 @@ class SongRepository(private val database: AppDatabase) {
         val links = queries.selectAllLinks().executeAsList().map {
             SetlistSongLink(it.setlist_id, it.song_id, it.position.toInt())
         }
-        return BackupData(allSongs(), allSetlists(), links)
+        val songTags = tagsBySong().mapValues { (_, tags) -> tags.map { it.id } }
+        return BackupData(
+            songs = allSongs(),
+            setlists = allSetlists(),
+            links = links,
+            artists = allArtists(),
+            tags = allTags(),
+            songTags = songTags
+        )
     }
 
     fun restoreBackup(data: BackupData): Boolean {
@@ -564,6 +572,15 @@ class SongRepository(private val database: AppDatabase) {
                 queries.insertSongTag(songId, tagId)
             }
         }
+    }
+
+    /**
+     * Sincroniza as tags de uma música a partir do corpo ChordPro (fonte da verdade):
+     * as diretivas `{tag:}`/`{tags:}`/`{x_tags:}` definem as associações no banco.
+     */
+    fun syncTagsFromContent(songId: Long, body: String) {
+        val tags = ChordProParser.parse(body).tags
+        setSongTags(songId, tags.map { createTag(it).id })
     }
 
     private fun DbSong.toModel(): Song = Song(

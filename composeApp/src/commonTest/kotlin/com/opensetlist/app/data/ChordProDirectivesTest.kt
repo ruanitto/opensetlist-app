@@ -48,10 +48,27 @@ class ChordProDirectivesTest {
         assertEquals("chorus", ChordProDirectives.resolve("Chorus")?.name)
     }
 
-    @Test
-    fun resolve_extensionIgnored() {
+@Test
+fun resolve_extensionIgnored() {
         assertNotNull(ChordProDirectives.resolve("x_custom"))
         assertEquals("x_", ChordProDirectives.resolve("x_custom")?.name)
+    }
+
+    @Test
+    fun resolve_tagDirectives() {
+        assertEquals("tag", ChordProDirectives.resolve("tag")?.name)
+        assertEquals("tags", ChordProDirectives.resolve("tags")?.name)
+        assertEquals("tags", ChordProDirectives.resolve("tags")?.metadataKey)
+        assertEquals("x_tags", ChordProDirectives.resolve("x_tags")?.name)
+        assertEquals("tags", ChordProDirectives.resolve("x_tags")?.metadataKey)
+    }
+
+    @Test
+    fun resolve_knownXDirective_isMetadata() {
+        val youtube = ChordProDirectives.resolve("x_youtube")
+        assertNotNull(youtube)
+        assertEquals("x_youtube", youtube.name)
+        assertEquals(ChordProDirectives.Kind.METADATA, youtube.kind)
     }
 
     @Test

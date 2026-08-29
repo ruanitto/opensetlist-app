@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +51,7 @@ fun ArtistsScreen(
     onArtistClick: (Artist) -> Unit,
     onEdit: (Artist) -> Unit,
     onDelete: (Artist) -> Unit,
+    onExport: (Artist) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -148,6 +150,12 @@ fun ArtistsScreen(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = AppStrings.editArtist
+                            )
+                        }
+                        IconButton(onClick = { onExport(artist) }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = AppStrings.exportArtist
                             )
                         }
                         IconButton(onClick = { onDelete(artist) }) {

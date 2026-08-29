@@ -101,4 +101,40 @@ class ChordProParserTest {
         assertTrue(parsed.lines.single().isComment)
         assertEquals("Nota do intérprete", parsed.lines.single().segments.joinToString("") { it.text })
     }
+
+    @Test
+    fun parse_tags_splitsByComma() {
+        val parsed = ChordProParser.parse("{tags: pop, rock, gospel}\n[G]")
+        assertEquals(listOf("pop", "rock", "gospel"), parsed.tags)
+    }
+
+    @Test
+    fun parse_tagDirectives_allForms_andIgnoresBlank() {
+        val parsed = ChordProParser.parse("{tag: modinha}\n{tags: pop,  , rock}\n{x_tags: mpb}\n[G]")
+        assertEquals(listOf("modinha", "pop", "rock", "mpb"), parsed.tags)
+    }
+
+    @Test
+    fun setTagsDirective_writesSingleLine() {
+        val updated = setTagsDirective("[G] verso", listOf(" pop ", "rock"))
+        assertEquals("{x_tags: pop, rock}\n[G] verso", updated)
+    }
+
+    @Test
+    fun setTagsDirective_replacesAllExistingForms() {
+        val body = "{tag: velho}\n{x_tags: a, b}\n{title: X}\n[G]"
+        val updated = setTagsDirective(body, listOf("novo"))
+        assertEquals("{x_tags: novo}\n{title: X}\n[G]", updated)
+    }
+
+    @Test
+    fun setTagsDirective_removesWhenEmpty() {
+        val body = "{x_tags: a, b}\n[G]"
+        assertEquals("[G]", setTagsDirective(body, emptyList()))
+    }
+
+    @Test
+    fun setTagsDirective_blankBody_staysBlank() {
+        assertEquals("", setTagsDirective("", emptyList()))
+    }
 }

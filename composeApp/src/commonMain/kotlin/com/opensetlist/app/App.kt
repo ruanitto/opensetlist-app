@@ -63,6 +63,7 @@ import com.opensetlist.app.data.ProBatchEvent
 import com.opensetlist.app.data.SongRepository
 import com.opensetlist.app.data.UltimateGuitar
 import com.opensetlist.app.data.setChordProDirective
+import com.opensetlist.app.data.setTagsDirective
 import com.opensetlist.app.data.db.AppDatabase
 import com.opensetlist.app.data.formatElapsedSeconds
 import com.opensetlist.app.data.rememberBackupActions
@@ -325,6 +326,10 @@ fun App(
         val imported = repository.importSong(content)
         reload()
         currentScreen = Screen.ChordView(imported)
+    }
+
+    fun syncSongTags(song: Song) {
+        if (song.id != 0L) repository.syncTagsFromContent(song.id, song.body)
     }
 
     fun handleImported(content: String) {
@@ -598,6 +603,26 @@ fun App(
         )
     }
 
+    fun exportArtistSongs(artist: Artist, share: Boolean) {
+        val songs = repository.songsByArtist(artist.name)
+        if (songs.isEmpty()) {
+            showMessage(AppStrings.noSongsToExport)
+            return
+        }
+        val json = DataTransfer.buildSongsBundleJson(songs)
+        doExport("setlist_musicas.osl", OSETLIST_MIME, json, share)
+    }
+
+    fun exportTagSongs(tag: Tag, share: Boolean) {
+        val songs = repository.songsByTag(tag.id)
+        if (songs.isEmpty()) {
+            showMessage(AppStrings.noSongsToExport)
+            return
+        }
+        val json = DataTransfer.buildSongsBundleJson(songs)
+        doExport("setlist_musicas.osl", OSETLIST_MIME, json, share)
+    }
+
     fun shareSetlist(setlist: Setlist) {
         val json = DataTransfer.buildSetJson(setlist, repository.songsInSetlist(setlist.id))
         doExport("set_${setlist.name}.osl", OSETLIST_MIME, json, share = true)
@@ -828,6 +853,7 @@ fun App(
                                 songs = songs,
                                 setlists = setlists,
                                 onSongClick = { song ->
+                                    syncSongTags(song)
                                     currentScreen = Screen.ChordView(song)
                                 },
                                 onSetlistClick = { setlist ->
@@ -880,7 +906,8 @@ fun App(
                                 onDelete = { artist ->
                                     pendingDeleteArtist = artist
                                     showDeleteArtistDialog = true
-                                }
+                                },
+                                onExport = { artist -> exportArtistSongs(artist, true) }
                             )
                         }
                         is Screen.TagList -> {
@@ -899,13 +926,15 @@ fun App(
                                 onDelete = { tag ->
                                     pendingDeleteTag = tag
                                     showDeleteTagDialog = true
-                                }
+                                },
+                                onExport = { tag -> exportTagSongs(tag, true) }
                             )
                         }
                         is Screen.ArtistSongs -> {
                             FilteredSongListScreen(
                                 songs = repository.songsByArtist(screen.artist.name),
                                 onSongClick = { song ->
+                                    syncSongTags(song)
                                     currentScreen = Screen.ChordView(song, origin = screen)
                                 },
                                 emptyText = AppStrings.noSongsOfArtist
@@ -915,6 +944,7 @@ fun App(
                             FilteredSongListScreen(
                                 songs = repository.songsByTag(screen.tag.id),
                                 onSongClick = { song ->
+                                    syncSongTags(song)
                                     currentScreen = Screen.ChordView(song, origin = screen)
                                 },
                                 emptyText = AppStrings.noSongsWithTag
@@ -969,9 +999,9 @@ fun App(
                             ChordViewerScreen(
                                 songs = screen.siblings,
                                 initialIndex = screen.index,
-                                songTags = tagsBySong,
                                 onBack = { goBack() },
                                 onEdit = { song ->
+                                    syncSongTags(song)
                                     currentScreen = Screen.Editor(song, screen)
                                 },
                                 onDelete = { song ->
@@ -1008,6 +1038,7 @@ fun App(
                                     val setSongs = screen.setlist.songs
                                     val index = setSongs.indexOfFirst { it.id == song.id }
                                         .coerceAtLeast(0)
+                                    syncSongTags(song)
                                     currentScreen = Screen.ChordView(
                                         song = song,
                                         siblings = setSongs,
@@ -1056,7 +1087,12 @@ fun App(
                                 initialTags = tagsBySong[screen.song.id].orEmpty(),
                                 artistSuggestions = artists.map { it.name },
                                 onSave = { updated, tagIds ->
-                                    val saved = repository.upsert(updated)
+                                    val tagNames = tagIds.mapNotNull { id ->
+                                        tags.firstOrNull { it.id == id }?.name
+                                    }
+                                    val saved = repository.upsert(
+                                        updated.copy(body = setTagsDirective(updated.body, tagNames))
+                                    )
                                     repository.setSongTags(saved.id, tagIds)
                                     songs = repository.allSongs()
                                     setlists = repository.allSetlists()

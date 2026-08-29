@@ -42,7 +42,6 @@ import com.opensetlist.app.model.ChordProLine
 import com.opensetlist.app.model.ChordProSegment
 import com.opensetlist.app.model.CommentStyle
 import com.opensetlist.app.model.ParsedSong
-import com.opensetlist.app.model.Tag
 
 /**
  * Renderizador de uma música parseada em ChordPro, com acordes sobrepostos ao texto.
@@ -52,7 +51,6 @@ import com.opensetlist.app.model.Tag
 @Composable
 fun ChordProView(
     song: ParsedSong,
-    tags: List<Tag>,
     hideChords: Boolean = false,
     fontSize: Float = 14f,
     highlightQuery: String? = null,
@@ -66,29 +64,6 @@ fun ChordProView(
             .verticalScroll(scrollState)
             .padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 4.dp)
     ) {
-        if (tags.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                tags.forEach { tag ->
-                    Surface(
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Text(
-                            text = tag.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-        }
         Text(
             text = song.title,
             style = MaterialTheme.typography.headlineMedium,
@@ -133,7 +108,6 @@ fun ChordProView(
         if (song.album.isNotBlank()) details.add(AppStrings.metaKeyValue(AppStrings.metaAlbum, song.album))
         if (song.year.isNotBlank()) details.add(AppStrings.metaKeyValue(AppStrings.metaAno, song.year))
         if (song.copyright.isNotBlank()) details.add("© ${song.copyright}")
-        if (song.tags.isNotEmpty()) details.add(AppStrings.metaKeyValue(AppStrings.metaTags, song.tags.joinToString(", ")))
 
         if (details.isNotEmpty()) {
             Spacer(modifier = Modifier.height(2.dp))
