@@ -22,7 +22,9 @@ O projeto é livre e aberto: contribuições são bem-vindas.
 ### Músicas
 - Lista de todas as músicas com busca (título/artista) e ordenação (nome, artista, criação);
 - Editor de cifras **ChordPro** completo (título, artista, tom, BPM, capo, duração, link do YouTube, tags);
-- Excluir música pela lista, pelo visualizador ou pelo editor.
+- Excluir música pela lista, pelo visualizador ou pelo editor;
+- **Buscar e importar cifras da internet** — busca por título (ou URL colada) em **Ultimate Guitar** e **CifraClub**, com prévia da cifra, conversão automática para ChordPro e importação direta na biblioteca;
+- **Importar cifras de link compartilhado** (Android) — "compartilhar" um link de cifra do navegador para o OpenSetlist importa a música direto na biblioteca.
 
 ### Visualizador de cifras
 - Transposição de tom (+/-);
@@ -75,16 +77,16 @@ As importações (backup, músicas, setlists, SetList Helper e JustChords) mostr
 - [x] Manter tela acesa por contexto (visualização de música, playlist ou o tempo todo)
 - [x] Nuvem via seletor do sistema (export/import)
 - [x] Minificação/ofuscação Android (R8 + `proguard-rules.pro`) e backup com timestamp no nome
+- [x] Obter cifras da internet — busca/importação de cifras de **Ultimate Guitar e CifraClub** (prévia, conversão para ChordPro, importação direta na biblioteca) e importação de cifras a partir de **link compartilhado** (Android)
+- [x] Testes automatizados (parser ChordPro, transposer, importação JSON, offsets de acordes)
 
 ### 🚀 Previsto
 - [ ] **Exportar setlist e músicas em PDF** — exportar setlist e músicas (letra/cifra) em PDF para impressão/uso offline
 - [ ] **Metrônomo simples** — metrônomo com BPM e compasso para acompanhar durante o ensaio/apresentação
 - [ ] **Visualização web via host local da setlist** — servir a setlist atual em rede local (HTTP embutido + página HTML/QR code) para quem não tem o app instalado abrir no navegador/celular
 - [ ] **Sincronização por conta** — login em conta cloud e sincronização automática entre dispositivos (OAuth real com Google Drive/Dropbox)
-- [ ] **Obter cifras da internet** — busca e importação de cifras de APIs públicas de música
 - [ ] Keystore de release própria + publicação na Play Store
 - [ ] Publicação na App Store (iOS)
-- [ ] Testes automatizados (parser ChordPro, transposer)
 
 ## Plataformas
 
