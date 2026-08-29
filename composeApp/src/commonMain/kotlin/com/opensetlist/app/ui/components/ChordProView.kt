@@ -391,7 +391,10 @@ private fun ChordLine(
         val chordLine = StringBuilder()
         for (seg in segments) {
             chordLine.append(" ".repeat(seg.text.length))
-            if (seg.chord != null) chordLine.append(seg.chord)
+            if (seg.chord != null) {
+                if (chordLine.isNotEmpty() && chordLine.last() != ' ') chordLine.append(' ')
+                chordLine.append(seg.chord)
+            }
         }
         Text(
             text = chordLine.toString(),
@@ -559,6 +562,29 @@ private fun buildChunk(words: List<LyricWord>): Chunk {
 }
 
 /**
+ * Calcula o deslocamento horizontal (px) de cada acorde em uma banda, evitando
+ * sobreposição: acordes na mesma coluna (ex.: `[D4][D/F#]`) são deslocados para
+ * a direita, sempre após o fim do acorde anterior + uma célula de espaçamento.
+ */
+internal fun chordXOffsets(
+    chords: List<Pair<Int, String>>,
+    advancePx: Float,
+    gapPx: Float,
+    chordWidthPx: (String) -> Float
+): List<Float> {
+    val xs = ArrayList<Float>(chords.size)
+    var rightEdgePx = Float.NEGATIVE_INFINITY
+    for ((colAbs, chord) in chords) {
+        val naturalX = colAbs * advancePx
+        val bumpedX = rightEdgePx + gapPx
+        val x = if (naturalX > bumpedX) naturalX else bumpedX
+        rightEdgePx = x + chordWidthPx(chord)
+        xs.add(x)
+    }
+    return xs
+}
+
+/**
  * Renderiza um pedaço: uma faixa de acordes fixa por cima e a letra embaixo.
  * Os acordes são posicionados na coluna exata da sílaba (x = coluna × avanço).
  */
@@ -588,6 +614,10 @@ private fun ChunkLine(
     } else {
         TextStyle.Default
     }
+    val measurer = rememberTextMeasurer()
+    val gapPx = with(density) {
+        measurer.measure("M", chordStyle).size.width.toFloat()
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(
@@ -595,11 +625,16 @@ private fun ChunkLine(
                 .fillMaxWidth()
                 .height(bandDp)
         ) {
-            chunk.chords.forEach { (colAbs, chord) ->
+            val xs = chordXOffsets(
+                chords = chunk.chords,
+                advancePx = lyricAdvancePx,
+                gapPx = gapPx
+            ) { chord -> with(density) { measurer.measure(chord, chordStyle).size.width.toFloat() } }
+            chunk.chords.forEachIndexed { i, (_, chord) ->
                 Text(
                     text = chord,
                     style = chordStyle,
-                    modifier = Modifier.offset(x = with(density) { (colAbs * lyricAdvancePx).toDp() })
+                    modifier = Modifier.offset(x = with(density) { xs[i].toDp() })
                 )
             }
         }
